@@ -61,6 +61,465 @@
     <header class="title">
       
         <h1>
+          <a href="/2018/12/04/12.04/">结束</a>
+        </h1>
+      
+      <div class="ListMeta">
+  <time datetime="2018-12-04T04:00:09.000Z" itemprop="datePublished">
+    2018-12-04
+  </time>
+  
+  | 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/tags/曲：起风了/">曲：起风了</a> }
+  </li>
+
+
+  </ul>
+  
+  
+  / 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
+  </li>
+
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
+  </li>
+
+
+  </ul>
+  
+</div>
+
+    </header>
+    <div>
+      
+        <blockquote><h3 id="纵使沧海桑田，理想颠倒，让他随缘而逝，随风飘散。"><a href="#纵使沧海桑田，理想颠倒，让他随缘而逝，随风飘散。" class="headerlink" title="纵使沧海桑田，理想颠倒，让他随缘而逝，随风飘散。"></a>纵使沧海桑田，理想颠倒，让他随缘而逝，随风飘散。</h3><footer><strong>起风了</strong><cite>-by 买辣椒也用券</cite></footer></blockquote>
+<img src="/2018/12/04/12.04/12.04.png" title="[everyday-12.04]">
+
+      
+    </div>
+</article>
+
+    </li>
+  
+    <li>
+      <article class="ListView">
+    <header class="title">
+      
+      <div class="ListMeta">
+  <time datetime="2018-12-03T14:13:19.343Z" itemprop="datePublished">
+    2018-12-03
+  </time>
+  
+  
+</div>
+
+    </header>
+    <div>
+      
+        <h3 id="C-的委托和事件？"><a href="#C-的委托和事件？" class="headerlink" title="C#的委托和事件？"></a>C#的委托和事件？</h3><h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>委托 和 事件在 .Net Framework中的应用非常广泛，然而，较好地理解委托和事件对很多接触C#时间不长的人来说并不容易。它们就像是一道槛儿，过了这个槛的人，觉得真是太容易了，而没有过去的人每次见到委托和事件就觉得心里别（bie）得慌，混身不自在。本文中，我将通过两个范例由浅入深地讲述什么是委托、为什么要使用委托、事件的由来、.Net Framework中的委托和事件、委托和事件对Observer设计模式的意义，对它们的中间代码也做了讨论。</p>
+<p>｀将方法作为方法的参数｀<br>我们先不管这个标题如何的绕口，也不管委托究竟是个什么东西，来看下面这两个最简单的方法，它们不过是在屏幕上输出一句问候的话语：</p>
+<p>public void GreetPeople(string name) {<br>    // 做某些额外的事情，比如初始化之类，此处略<br>    EnglishGreeting(name);<br>}<br>public void EnglishGreeting(string name) {<br>    Console.WriteLine(“Morning, “ + name);<br>}</p>
+<p>暂且不管这两个方法有没有什么实际意义。GreetPeople用于向某人问好，当我们传递代表某人姓名的name参数，比如说“Jimmy”，进去的时候，在这个方法中，将调用EnglishGreeting方法，再次传递name参数，EnglishGreeting则用于向屏幕输出 “Morning, Jimmy”。</p>
+<p>现在假设这个程序需要进行全球化，哎呀，不好了，我是中国人，我不明白“Morning”是什么意思，怎么办呢？好吧，我们再加个中文版的问候方法：</p>
+<p>｀｀｀<br>public void ChineseGreeting(string name){<br>    Console.WriteLine(“早上好, “ + name);<br>}<br>｀｀｀</p>
+<p>这时候，GreetPeople也需要改一改了，不然如何判断到底用哪个版本的Greeting问候方法合适呢？在进行这个之前，我们最好再定义一个枚举作为判断的依据：</p>
+<p>public enum Language{<br>    English, Chinese<br>}</p>
+<p>public void GreetPeople(string name, Language lang){<br>    //做某些额外的事情，比如初始化之类，此处略<br>    swith(lang){<br>        case Language.English:<br>           EnglishGreeting(name);<br>           break;<br>       case Language.Chinese:<br>           ChineseGreeting(name);<br>           break;<br>    }<br>}</p>
+<p>OK，尽管这样解决了问题，但我不说大家也很容易想到，这个解决方案的可扩展性很差，如果日后我们需要再添加韩文版、日文版，就不得不反复修改枚举和GreetPeople()方法，以适应新的需求。</p>
+<p>在考虑新的解决方案之前，我们先看看 GreetPeople的方法签名：</p>
+<p>public void GreetPeople(string name, Language lang)<br>我们仅看 string name，在这里，string 是参数类型，name 是参数变量，当我们赋给name字符串“jimmy”时，它就代表“jimmy”这个值；当我们赋给它“张子阳”时，它又代表着“张子阳”这个值。然后，我们可以在方法体内对这个name进行其他操作。哎，这简直是废话么，刚学程序就知道了。</p>
+<p>如果你再仔细想想，假如GreetPeople()方法可以接受一个参数变量，这个变量可以代表另一个方法，当我们给这个变量赋值 EnglishGreeting的时候，它代表着 EnglsihGreeting() 这个方法；当我们给它赋值ChineseGreeting 的时候，它又代表着ChineseGreeting()方法。我们将这个参数变量命名为 MakeGreeting，那么不是可以如同给name赋值时一样，在调用 GreetPeople()方法的时候，给这个MakeGreeting 参数也赋上值么(ChineseGreeting或者EnglsihGreeting等)？然后，我们在方法体内，也可以像使用别的参数一样使用MakeGreeting。但是，由于MakeGreeting代表着一个方法，它的使用方式应该和它被赋的方法(比如ChineseGreeting)是一样的，比如：</p>
+<p>MakeGreeting(name);<br>好了，有了思路了，我们现在就来改改GreetPeople()方法，那么它应该是这个样子了：</p>
+<p>public void GreetPeople(string name, *** MakeGreeting){<br>    MakeGreeting(name);<br>}</p>
+<p>注意到 *** ，这个位置通常放置的应该是参数的类型，但到目前为止，我们仅仅是想到应该有个可以代表方法的参数，并按这个思路去改写GreetPeople方法，现在就出现了一个大问题：这个代表着方法的MakeGreeting参数应该是什么类型的？</p>
+<p>NOTE：这里已不再需要枚举了，因为在给MakeGreeting赋值的时候动态地决定使用哪个方法，是ChineseGreeting还是 EnglishGreeting，而在这个两个方法内部，已经对使用“morning”还是“早上好”作了区分。</p>
+<p>聪明的你应该已经想到了，现在是委托该出场的时候了，但讲述委托之前，我们再看看MakeGreeting参数所能代表的 ChineseGreeting()和EnglishGreeting()方法的签名：</p>
+<p>public void EnglishGreeting(string name)<br>public void ChineseGreeting(string name)</p>
+<p>如同name可以接受String类型的“你好”和“１２３”，但不能接受bool类型的true和int类型的1一样。MakeGreeting的 参数类型定义 应该能够确定 MakeGreeting可以代表的方法种类，再进一步讲，就是MakeGreeting可以代表的方法 的 参数类型和返回类型。</p>
+<p>于是，委托出现了：它定义了MakeGreeting参数所能代表的方法的种类，也就是MakeGreeting参数的类型。</p>
+<p>NOTE：如果上面这句话比较绕口，我把它翻译成这样：string 定义了name参数所能代表的值的种类，也就是name参数的类型。</p>
+<p>本例中委托的定义：</p>
+<p>public delegate void GreetingDelegate(string name);</p>
+<p>可以与上面EnglishGreeting()方法的签名对比一下，除了加入了delegate关键字以外，其余的是不是完全一样？<br>现在，让我们再次改动GreetPeople()方法，如下所示：</p>
+<p>public void GreetPeople(string name, GreetingDelegate MakeGreeting){<br>    MakeGreeting(name);<br>}</p>
+<p>如你所见，委托GreetingDelegate出现的位置与 string相同，string是一个类型，那么GreetingDelegate应该也是一个类型，或者叫类(Class)。但是委托的声明方式和类却完全不同，这是怎么一回事？实际上，委托在编译的时候确实会编译成类。因为Delegate是一个类，所以在任何可以声明类的地方都可以声明委托。更多的内容将在下面讲述，现在，请看看这个范例的完整代码：</p>
+<p>using System;<br>using System.Collections.Generic;<br>using System.Text;</p>
+<p>namespace Delegate {<br>     //定义委托，它定义了可以代表的方法的类型<br>     public delegate void GreetingDelegate(string name);<br>        class Program {</p>
+<pre><code>       private static void EnglishGreeting(string name) {
+           Console.WriteLine(&quot;Morning, &quot; + name);
+       }
+
+       private static void ChineseGreeting(string name) {
+           Console.WriteLine(&quot;早上好, &quot; + name);
+       }
+
+       //注意此方法，它接受一个GreetingDelegate类型的方法作为参数
+       private static void GreetPeople(string name, GreetingDelegate MakeGreeting) {
+           MakeGreeting(name);
+        }
+
+       static void Main(string[] args) {
+           GreetPeople(&quot;Jimmy Zhang&quot;, EnglishGreeting);
+           GreetPeople(&quot;张子阳&quot;, ChineseGreeting);
+           Console.ReadKey();
+       }
+    }
+}
+</code></pre><p>输出如下：<br>Morning, Jimmy Zhang<br>早上好, 张子阳<br>我们现在对委托做一个总结：</p>
+<p>委托是一个类，它定义了方法的类型，使得可以将方法当作另一个方法的参数来进行传递，这种将方法动态地赋给参数的做法，可以避免在程序中大量使用If-Else(Switch)语句，同时使得程序具有更好的可扩展性。</p>
+<p>将方法绑定到委托<br>看到这里，是不是有那么点如梦初醒的感觉？于是，你是不是在想：在上面的例子中，我不一定要直接在GreetPeople()方法中给 name参数赋值，我可以像这样使用变量：</p>
+<p>static void Main(string[] args) {<br>    string name1, name2;<br>    name1 = “Jimmy Zhang”;<br>    name2 = “张子阳”; </p>
+<pre><code> GreetPeople(name1, EnglishGreeting);
+ GreetPeople(name2, ChineseGreeting);
+Console.ReadKey();
+</code></pre><p>}</p>
+<p>而既然委托GreetingDelegate 和 类型 string 的地位一样，都是定义了一种参数类型，那么，我是不是也可以这么使用委托？</p>
+<p>static void Main(string[] args) {<br>    GreetingDelegate delegate1, delegate2;<br>    delegate1 = EnglishGreeting;<br>    delegate2 = ChineseGreeting;</p>
+<pre><code>GreetPeople(&quot;Jimmy Zhang&quot;, delegate1);
+    GreetPeople(&quot;张子阳&quot;, delegate2);
+    Console.ReadKey();
+</code></pre><p>}</p>
+<p>static void Main(string[] args) {<br>    GreetingDelegate delegate1, delegate2;<br>    delegate1 = EnglishGreeting;<br>    delegate2 = ChineseGreeting;</p>
+<pre><code>GreetPeople(&quot;Jimmy Zhang&quot;, delegate1);
+    GreetPeople(&quot;张子阳&quot;, delegate2);
+    Console.ReadKey();
+</code></pre><p>}</p>
+<p>输出为：<br>Morning, Jimmy Zhang<br>早上好, Jimmy Zhang<br>实际上，我们可以也可以绕过GreetPeople方法，通过委托来直接调用EnglishGreeting和ChineseGreeting：</p>
+<p>static void Main(string[] args) {<br>    GreetingDelegate delegate1;<br>    delegate1 = EnglishGreeting; // 先给委托类型的变量赋值<br>    delegate1 += ChineseGreeting;   // 给此委托变量再绑定一个方法</p>
+<pre><code>// 将先后调用 EnglishGreeting 与 ChineseGreeting 方法
+delegate1 (&quot;Jimmy Zhang&quot;);   
+Console.ReadKey();
+</code></pre><p>}</p>
+
+      
+    </div>
+</article>
+
+    </li>
+  
+    <li>
+      <article class="ListView">
+    <header class="title">
+      
+        <h1>
+          <a href="/2018/12/03/12.03/">放弃</a>
+        </h1>
+      
+      <div class="ListMeta">
+  <time datetime="2018-12-03T04:00:09.000Z" itemprop="datePublished">
+    2018-12-03
+  </time>
+  
+  | 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/tags/曲：春雪/">曲：春雪</a> }
+  </li>
+
+
+  </ul>
+  
+  
+  / 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
+  </li>
+
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/Tinger/">Tinger</a> }
+  </li>
+
+
+  </ul>
+  
+</div>
+
+    </header>
+    <div>
+      
+        <blockquote><h3 id="春光不必乘早，冬霜不会迟到。相聚离开，都是刚刚就好。"><a href="#春光不必乘早，冬霜不会迟到。相聚离开，都是刚刚就好。" class="headerlink" title="春光不必乘早，冬霜不会迟到。相聚离开，都是刚刚就好。"></a>春光不必乘早，冬霜不会迟到。相聚离开，都是刚刚就好。</h3><footer><strong>春雪</strong><cite>-by 孟庭苇</cite></footer></blockquote>
+<img src="/2018/12/03/12.03/12.03.png" title="[everyday-12.03]">
+      
+    </div>
+</article>
+
+    </li>
+  
+    <li>
+      <article class="ListView">
+    <header class="title">
+      
+        <h1>
+          <a href="/2018/12/02/12.02/">童话</a>
+        </h1>
+      
+      <div class="ListMeta">
+  <time datetime="2018-12-02T04:00:09.000Z" itemprop="datePublished">
+    2018-12-02
+  </time>
+  
+  | 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/tags/曲：时空/">曲：时空</a> }
+  </li>
+
+
+  </ul>
+  
+  
+  / 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
+  </li>
+
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
+  </li>
+
+
+  </ul>
+  
+</div>
+
+    </header>
+    <div>
+      
+        <blockquote><h3 id="用爱的平衡，才能看透恐惧之火。"><a href="#用爱的平衡，才能看透恐惧之火。" class="headerlink" title="用爱的平衡，才能看透恐惧之火。"></a>用爱的平衡，才能看透恐惧之火。</h3><footer><strong>时空</strong><cite>-by 张楚</cite></footer></blockquote>
+<img src="/2018/12/02/12.02/12.02.png" title="[everyday-12.02]">
+
+      
+    </div>
+</article>
+
+    </li>
+  
+    <li>
+      <article class="ListView">
+    <header class="title">
+      
+        <h1>
+          <a href="/2018/12/01/12.01/">禁爱</a>
+        </h1>
+      
+      <div class="ListMeta">
+  <time datetime="2018-12-01T04:00:09.000Z" itemprop="datePublished">
+    2018-12-01
+  </time>
+  
+  | 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/tags/曲：小船/">曲：小船</a> }
+  </li>
+
+
+  </ul>
+  
+  
+  / 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
+  </li>
+
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
+  </li>
+
+
+  </ul>
+  
+</div>
+
+    </header>
+    <div>
+      
+        <blockquote><h3 id="说不出口的话，请它坐上小船，去到它该去的地方。"><a href="#说不出口的话，请它坐上小船，去到它该去的地方。" class="headerlink" title="说不出口的话，请它坐上小船，去到它该去的地方。"></a>说不出口的话，请它坐上小船，去到它该去的地方。</h3><footer><strong>小船</strong><cite>-by 陈绮贞</cite></footer></blockquote>
+<img src="/2018/12/01/12.01/12.01.png" title="[everyday-12.01]">
+
+      
+    </div>
+</article>
+
+    </li>
+  
+    <li>
+      <article class="ListView">
+    <header class="title">
+      
+        <h1>
+          <a href="/2018/11/30/11.30/">放弃</a>
+        </h1>
+      
+      <div class="ListMeta">
+  <time datetime="2018-11-30T04:00:09.000Z" itemprop="datePublished">
+    2018-11-30
+  </time>
+  
+  | 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/tags/曲：告白/">曲：告白</a> }
+  </li>
+
+
+  </ul>
+  
+  
+  / 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
+  </li>
+
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
+  </li>
+
+
+  </ul>
+  
+</div>
+
+    </header>
+    <div>
+      
+        <blockquote><h3 id="枕头里藏满了发了霉的梦，梦里住满了无法拥有的人。"><a href="#枕头里藏满了发了霉的梦，梦里住满了无法拥有的人。" class="headerlink" title="枕头里藏满了发了霉的梦，梦里住满了无法拥有的人。"></a>枕头里藏满了发了霉的梦，梦里住满了无法拥有的人。</h3><footer><strong>告白</strong><cite>-by 王欣宇</cite></footer></blockquote>
+<img src="/2018/11/30/11.30/11.30.png" title="[everyday-11.30]">
+
+      
+    </div>
+</article>
+
+    </li>
+  
+    <li>
+      <article class="ListView">
+    <header class="title">
+      
+        <h1>
+          <a href="/2018/11/29/11.29/">安宁</a>
+        </h1>
+      
+      <div class="ListMeta">
+  <time datetime="2018-11-29T04:00:09.000Z" itemprop="datePublished">
+    2018-11-29
+  </time>
+  
+  | 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/tags/曲：小星星/">曲：小星星</a> }
+  </li>
+
+
+  </ul>
+  
+  
+  / 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
+  </li>
+
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
+  </li>
+
+
+  </ul>
+  
+</div>
+
+    </header>
+    <div>
+      
+        <blockquote><h3 id="既然无法与日月争辉，那便做一颗围绕着心中日月永不停歇的小星星。"><a href="#既然无法与日月争辉，那便做一颗围绕着心中日月永不停歇的小星星。" class="headerlink" title="既然无法与日月争辉，那便做一颗围绕着心中日月永不停歇的小星星。"></a>既然无法与日月争辉，那便做一颗围绕着心中日月永不停歇的小星星。</h3><footer><strong>小星星</strong><cite>-by 杜星莹</cite></footer></blockquote>
+<img src="/2018/11/29/11.29/11.29.png" title="[everyday-11.29]">
+
+      
+    </div>
+</article>
+
+    </li>
+  
+    <li>
+      <article class="ListView">
+    <header class="title">
+      
+        <h1>
+          <a href="/2018/11/28/11.28/">铭记</a>
+        </h1>
+      
+      <div class="ListMeta">
+  <time datetime="2018-11-28T04:00:09.000Z" itemprop="datePublished">
+    2018-11-28
+  </time>
+  
+  | 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/tags/曲：我喜欢的每个女孩都有男朋友/">曲：我喜欢的每个女孩都有男朋友</a> }
+  </li>
+
+
+  </ul>
+  
+  
+  / 
+  <ul>
+    
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
+  </li>
+
+  <li class="meta-text">
+  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
+  </li>
+
+
+  </ul>
+  
+</div>
+
+    </header>
+    <div>
+      
+        <blockquote><h3 id="结果不重要，只是遇见你，这个故事就值得铭记。"><a href="#结果不重要，只是遇见你，这个故事就值得铭记。" class="headerlink" title="结果不重要，只是遇见你，这个故事就值得铭记。"></a>结果不重要，只是遇见你，这个故事就值得铭记。</h3><footer><strong>我喜欢的每个女孩都有男朋友</strong><cite>-by 青柠檬乐队</cite></footer></blockquote>
+<img src="/2018/11/28/11.28/11.28.png" title="[everyday-11.28]">
+
+      
+    </div>
+</article>
+
+    </li>
+  
+    <li>
+      <article class="ListView">
+    <header class="title">
+      
+        <h1>
           <a href="/2018/11/27/11.27/">动情</a>
         </h1>
       
@@ -160,422 +619,11 @@
 
     </li>
   
-    <li>
-      <article class="ListView">
-    <header class="title">
-      
-        <h1>
-          <a href="/2018/11/25/11.25/">缺少美部分</a>
-        </h1>
-      
-      <div class="ListMeta">
-  <time datetime="2018-11-25T07:42:16.000Z" itemprop="datePublished">
-    2018-11-25
-  </time>
-  
-  | 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/tags/曲：残缺的彩虹/">曲：残缺的彩虹</a> }
-  </li>
-
-
-  </ul>
-  
-  
-  / 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
-  </li>
-
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
-  </li>
-
-
-  </ul>
-  
-</div>
-
-    </header>
-    <div>
-      
-        <blockquote><h3 id="想要听你说，快也多过哀伤；想要听你说，你看见的光是我。"><a href="#想要听你说，快也多过哀伤；想要听你说，你看见的光是我。" class="headerlink" title="想要听你说，快也多过哀伤；想要听你说，你看见的光是我。"></a>想要听你说，快也多过哀伤；想要听你说，你看见的光是我。</h3><footer><strong>残缺的彩虹</strong><cite>-by 陈绮贞</cite></footer></blockquote>
-<img src="/2018/11/25/11.25/11.25.png" title="[everyday-11.25]">
-
-      
-    </div>
-</article>
-
-    </li>
-  
-    <li>
-      <article class="ListView">
-    <header class="title">
-      
-        <h1>
-          <a href="/2018/11/24/11.24/">世界两面</a>
-        </h1>
-      
-      <div class="ListMeta">
-  <time datetime="2018-11-24T05:47:07.000Z" itemprop="datePublished">
-    2018-11-24
-  </time>
-  
-  | 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/tags/曲：身后/">曲：身后</a> }
-  </li>
-
-
-  </ul>
-  
-  
-  / 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
-  </li>
-
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
-  </li>
-
-
-  </ul>
-  
-</div>
-
-    </header>
-    <div>
-      
-        <blockquote><h3 id="小时候，你牵着我去看人间烟火；白了头，我牵着你去看世间繁华。"><a href="#小时候，你牵着我去看人间烟火；白了头，我牵着你去看世间繁华。" class="headerlink" title="小时候，你牵着我去看人间烟火；白了头，我牵着你去看世间繁华。"></a>小时候，你牵着我去看人间烟火；白了头，我牵着你去看世间繁华。</h3><footer><strong>身后</strong><cite>-by 黄鲲_</cite></footer></blockquote>
-<img src="/2018/11/24/11.24/11.24.png" title="[everyday-11.24]">
-      
-    </div>
-</article>
-
-    </li>
-  
-    <li>
-      <article class="ListView">
-    <header class="title">
-      
-        <h1>
-          <a href="/2018/11/23/11.23/">亘古与憧憬</a>
-        </h1>
-      
-      <div class="ListMeta">
-  <time datetime="2018-11-23T05:27:45.000Z" itemprop="datePublished">
-    2018-11-23
-  </time>
-  
-  | 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/tags/曲：あいことば/">曲：あいことば</a> }
-  </li>
-
-
-  </ul>
-  
-  
-  / 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
-  </li>
-
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
-  </li>
-
-
-  </ul>
-  
-</div>
-
-    </header>
-    <div>
-      
-        <blockquote><h3 id="爱语无形，掷地有声。既然心怀未来，就别放弃希望。"><a href="#爱语无形，掷地有声。既然心怀未来，就别放弃希望。" class="headerlink" title="爱语无形，掷地有声。既然心怀未来，就别放弃希望。"></a>爱语无形，掷地有声。既然心怀未来，就别放弃希望。</h3><footer><strong>あいことば</strong><cite>-by 云音乐樱花酱</cite></footer></blockquote>
-<img src="/2018/11/23/11.23/11.23.png" title="[everyday-11.23]">
-
-      
-    </div>
-</article>
-
-    </li>
-  
-    <li>
-      <article class="ListView">
-    <header class="title">
-      
-        <h1>
-          <a href="/2018/11/22/11.22/">跳跃</a>
-        </h1>
-      
-      <div class="ListMeta">
-  <time datetime="2018-11-22T02:43:50.000Z" itemprop="datePublished">
-    2018-11-22
-  </time>
-  
-  | 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/tags/曲：Grateful/">曲：Grateful</a> }
-  </li>
-
-
-  </ul>
-  
-  
-  / 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
-  </li>
-
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
-  </li>
-
-
-  </ul>
-  
-</div>
-
-    </header>
-    <div>
-      
-        <blockquote><h3 id="我感激这一场暴风雨，是它让我感受到雨后阳光的别样风采。"><a href="#我感激这一场暴风雨，是它让我感受到雨后阳光的别样风采。" class="headerlink" title="我感激这一场暴风雨，是它让我感受到雨后阳光的别样风采。"></a>我感激这一场暴风雨，是它让我感受到雨后阳光的别样风采。</h3><footer><strong>Grateful</strong><cite>-by Rita Ora</cite></footer></blockquote>
-<img src="/2018/11/22/11.22/11.22.png" title="[everyday-11.22]">
-      
-    </div>
-</article>
-
-    </li>
-  
-    <li>
-      <article class="ListView">
-    <header class="title">
-      
-        <h1>
-          <a href="/2018/11/21/11.21/">若无其事</a>
-        </h1>
-      
-      <div class="ListMeta">
-  <time datetime="2018-11-21T05:08:28.000Z" itemprop="datePublished">
-    2018-11-21
-  </time>
-  
-  | 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/tags/曲：隐形人/">曲：隐形人</a> }
-  </li>
-
-
-  </ul>
-  
-  
-  / 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
-  </li>
-
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
-  </li>
-
-
-  </ul>
-  
-</div>
-
-    </header>
-    <div>
-      
-        <blockquote><h3 id="嘿，你好呀，没想到还能再见你，你还是老样子。"><a href="#嘿，你好呀，没想到还能再见你，你还是老样子。" class="headerlink" title="嘿，你好呀，没想到还能再见你，你还是老样子。"></a>嘿，你好呀，没想到还能再见你，你还是老样子。</h3><footer><strong>隐形人</strong><cite>-by 李雪妍</cite></footer></blockquote>
-<img src="/2018/11/21/11.21/11.21.png" title="[everyday-11.21]">
-      
-    </div>
-</article>
-
-    </li>
-  
-    <li>
-      <article class="ListView">
-    <header class="title">
-      
-        <h1>
-          <a href="/2018/11/20/11.20/">时间</a>
-        </h1>
-      
-      <div class="ListMeta">
-  <time datetime="2018-11-20T04:16:21.000Z" itemprop="datePublished">
-    2018-11-20
-  </time>
-  
-  | 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/tags/曲：分解者/">曲：分解者</a> }
-  </li>
-
-
-  </ul>
-  
-  
-  / 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
-  </li>
-
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
-  </li>
-
-
-  </ul>
-  
-</div>
-
-    </header>
-    <div>
-      
-        <blockquote><h3 id="时间也是一个分解者，好的坏的都会随时间流逝。"><a href="#时间也是一个分解者，好的坏的都会随时间流逝。" class="headerlink" title="时间也是一个分解者，好的坏的都会随时间流逝。"></a>时间也是一个分解者，好的坏的都会随时间流逝。</h3><footer><strong>分解者</strong><cite>-by 范世錡</cite></footer></blockquote>
-<img src="/2018/11/20/11.20/11.20.png" title="[everyday-11.20]">
-      
-    </div>
-</article>
-
-    </li>
-  
-    <li>
-      <article class="ListView">
-    <header class="title">
-      
-        <h1>
-          <a href="/2018/11/19/11.19/">期待</a>
-        </h1>
-      
-      <div class="ListMeta">
-  <time datetime="2018-11-19T04:22:58.000Z" itemprop="datePublished">
-    2018-11-19
-  </time>
-  
-  | 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/tags/曲：但凡/">曲：但凡</a> }
-  </li>
-
-
-  </ul>
-  
-  
-  / 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
-  </li>
-
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
-  </li>
-
-
-  </ul>
-  
-</div>
-
-    </header>
-    <div>
-      
-        <blockquote><h3 id="但凡仍有期待，就不能停滞不前；但凡仍有梦想，就不应该放弃。"><a href="#但凡仍有期待，就不能停滞不前；但凡仍有梦想，就不应该放弃。" class="headerlink" title="但凡仍有期待，就不能停滞不前；但凡仍有梦想，就不应该放弃。"></a>但凡仍有期待，就不能停滞不前；但凡仍有梦想，就不应该放弃。</h3><footer><strong>但凡</strong><cite>-by shiRk14</cite></footer></blockquote>
-<img src="/2018/11/19/11.19/11.19.png" title="[everyday-11.19]">
-      
-    </div>
-</article>
-
-    </li>
-  
-    <li>
-      <article class="ListView">
-    <header class="title">
-      
-        <h1>
-          <a href="/2018/11/18/11.18/">来临</a>
-        </h1>
-      
-      <div class="ListMeta">
-  <time datetime="2018-11-18T06:23:45.000Z" itemprop="datePublished">
-    2018-11-18
-  </time>
-  
-  | 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/tags/曲：当爱来临的时候/">曲：当爱来临的时候</a> }
-  </li>
-
-
-  </ul>
-  
-  
-  / 
-  <ul>
-    
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/">Everyday[细语]</a> }
-  </li>
-
-  <li class="meta-text">
-  { <a href="/categories/Everyday-细语/网易云音乐/">网易云音乐</a> }
-  </li>
-
-
-  </ul>
-  
-</div>
-
-    </header>
-    <div>
-      
-        <blockquote><h3 id="当爱来临的时候，总有种特别的温柔。"><a href="#当爱来临的时候，总有种特别的温柔。" class="headerlink" title="当爱来临的时候，总有种特别的温柔。"></a>当爱来临的时候，总有种特别的温柔。</h3><footer><strong>当爱来临的时候</strong><cite>-by 吴莫愁</cite></footer></blockquote>
-<img src="/2018/11/18/11.18/11.18.png" title="[everyday-11.18]">
-
-      
-    </div>
-</article>
-
-    </li>
-  
 </ul>
 
   <section id="nav-wrapper">
     <nav id="page-nav">
-      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">下一页 »</a>
+      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/">下一页 »</a>
     </nav>
   </section>
 
